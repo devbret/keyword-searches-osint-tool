@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Keyword Searches</title>
+        <meta name="description" content="Store keyword searches in the browser for later use." />
+        <meta name="author" content="Bret Bernhoft" />
+        <!-- Call in a helpful CSS library -->
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+        <style>
+            * {
+                padding: 0px;
+                border: none;
+                margin: 0px;
+                box-sizing: border-box;
+                font-family: sans-serif;
+            }
+            main {
+                padding: 0px 10px 10px 0px;
+            }
+            ul {
+                list-style-type: none;
+                display: inline-flex;
+                flex-direction: column;
+            }
+            li {
+                padding: 6px 5px 6px 19px;
+                position: relative;
+            }
+            li:hover {
+                background: lightgray;
+                border-right: 2px solid darkgray;
+            }
+            a {
+                text-decoration: none;
+                color: magenta;
+                text-shadow: 1px 1px darkgray;
+            }
+            a:visited {
+                color: purple;
+            }
+            a:hover {
+                color: black;
+            }
+            .keyword {
+                font-size: 23px;
+                font-weight: bolder;
+                text-shadow: 1px 1px white, -1px -1px white, 1px -1px white, -1px 1px white;
+            }
+            .bucket {
+                padding: 8px 1px 2px 6px;
+                position: relative;
+                margin-right: 5px;
+            }
+            .bucket:hover {
+                background-color: white;
+                box-shadow: inset 0px 0px 2px 1px lightgray;
+            }
+            .platform {
+                font-size: 9px;
+                position: absolute;
+                left: 1px;
+                bottom: -6px;
+                color: rgba(0, 0, 0, 0.75);
+            }
+            .search {
+                font-size: 23px;
+                margin-right: 4px;
+            }
+            .close-keyword {
+                color: darkgray;
+                font-size: 8px;
+                position: absolute;
+                top: 15px;
+                left: 7px;
+                font-weight: bolder;
+            }
+            .close-keyword:hover {
+                color: red;
+                cursor: pointer;
+            }
+            .search-bar {
+                position: fixed;
+                top: 0px;
+                right: 165px;
+                padding: 8px 12px;
+                border: 1px solid darkgray;
+            }
+            .stats-panel {
+                position: fixed;
+                top: 43px;
+                right: 20px;
+                width: 300px;
+            }
+            .stats-panel p {
+                color: black;
+                font-size: 13px;
+            }
+            .stats-panel-header {
+                color: black;
+                font-size: 17px;
+            }
+            .keyword-select {
+                width: 300px;
+                height: 250px;
+                border: 1px solid darkgray;
+            }
+            .keyword-select option {
+                padding: 3px;
+            }
+            .keyword-select option:hover {
+                background-color: lightgray;
+                cursor: pointer;
+            }
+            .parameter-DIV {
+                display: flex;
+            }
+            .timeframe-select,
+            .platform-select {
+                display: block;
+                margin: auto;
+                margin-top: 30px;
+                padding: 8px 12px;
+                border: 1px solid darkgray;
+            }
+            .timeframe-select:hover,
+            .platform-select:hover {
+                cursor: pointer;
+            }
+            .search-button {
+                padding: 8px 12px;
+                border: 1px solid darkgray;
+                margin: auto;
+                display: block;
+                margin-top: 30px;
+            }
+            .search-button:hover {
+                background-color: gold;
+                cursor: pointer;
+            }
+            .custom-search-button {
+                position: fixed;
+                top: 0px;
+                right: 49px;
+                padding: 8px 12px;
+                border: 1px solid darkgray;
+            }
+            .custom-search-button:hover {
+                background-color: gold;
+                cursor: pointer;
+            }
+            .add-button {
+                position: fixed;
+                top: 0px;
+                right: 0px;
+                padding: 8px 12px;
+                border: 1px solid darkgray;
+            }
+            .add-button:hover {
+                cursor: pointer;
+                background: gold;
+            }
+            .bg {
+                position: fixed;
+                top: 0px;
+                left: 0px;
+                width: 100vw;
+                height: 100vh;
+                background-color: rgba(0, 0, 0, 0.5);
+            }
+            .popup {
+                width: 350px;
+                padding: 33px 23px;
+                background: white;
+                border: 1px solid darkgray;
+                position: fixed;
+                top: 200px;
+                box-shadow: 0px 0px 2px 1px darkgray;
+            }
+            .close-popup {
+                position: absolute;
+                top: 2px;
+                right: 5px;
+            }
+            .close-popup:hover {
+                color: red;
+                cursor: pointer;
+            }
+            .new-keyword-input {
+                width: 100%;
+                border: 1px solid lightgray;
+                padding: 8px 12px;
+            }
+            .submit-button {
+                margin: 23px auto 0px auto;
+                display: block;
+                padding: 8px 12px;
+                border: 1px solid darkgray;
+            }
+            .submit-button:hover {
+                cursor: pointer;
+                background: gold;
+            }
+            .select2-results__options {
+                width: 300px;
+            }
+        </style>
+        <!-- Call in two helpful JavaScript libraries -->
+        <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    </head>
+    <body>
+        <main>
+            <ul></ul>
+        </main>
+        <script>
+            const openTime = new Date();
+            // Function to store the JSON
+            function storeData(key, dataArray) {
+                if (!Array.isArray(dataArray)) {
+                    console.error('Data must be an array.');
+                    return;
+                }
+
+                localStorage.setItem(key, JSON.stringify(dataArray));
+            }
+            // Function to retrieve the JSON
+            function retrieveData(key) {
+                const data = localStorage.getItem(key);
+                if (data) {
+                    return JSON.parse(data);
+                } else {
+                    return [];
+                }
+            }
+            // Retrieve the JSON from storage, if present, and sort it alphabetically
+            const keywords = retrieveData('myArrayKey').sort(function (a, b) {
+                if (a.trim() > b.trim()) {
+                    return 1;
+                } else if (a.trim() < b.trim()) {
+                    return -1;
+                } else {
+                    return 0;
+                }
+            });
+            const totalNumberOfKeywords = document.createElement('p');
+            let totalClicks = 0;
+            const listElem = document.querySelector('ul');
+            for (let iy = 0; iy < keywords.length; iy += 1) {
+                const innerLineItemElem = document.createElement('li');
+                const innerParaElem = document.createElement('p');
+                innerLineItemElem.appendChild(innerParaElem);
+                listElem.appendChild(innerLineItemElem);
+                const keyword = keywords[iy].toLowerCase();
+                innerParaElem.innerHTML = `<span class="keyword">${keyword}</span> - <span class="bucket"><span class="platform"><a href="https://www.google.com/search?q=${keyword}" target="_blank">Google</a></span> <span class="search"><a href="https://www.google.com/search?q=${keyword}&tbs=qdr:d" target="_blank">D</a></span><span class="search"><a href="https://www.google.com/search?q=${keyword}&tbs=qdr:w" target="_blank">W</a></span><span class="search"><a href="https://www.google.com/search?q=${keyword}&tbs=qdr:m" target="_blank">M</a></span></span> <span class="bucket"><span class="platform"><a  href="https://www.youtube.com/results?search_query=${keyword}" target="_blank">YouTube</a></span> <span class="search"><a href="https://www.youtube.com/results?search_query=${keyword}&sp=EgIIAg%253D%253D" target="_blank">D</a></span><span class="search"><a href="https://www.youtube.com/results?search_query=${keyword}&sp=EgQIAxAB" target="_blank">W</a></span><span class="search"><a href="https://www.youtube.com/results?search_query=${keyword}&sp=EgQIBBAB" target="_blank">M</a></span></span> <span class="bucket"><span class="platform"><a href="https://old.reddit.com/search/?q=${keyword}" target="_blank">Reddit</a></span> <span class="search"><a href="https://old.reddit.com/search/?q=${keyword}&t=day" target="_blank">D</a></span><span class="search"><a href="https://old.reddit.com/search/?q=${keyword}&t=week" target="_blank">W</a></span><span class="search"><a href="https://old.reddit.com/search/?q=${keyword}&t=month" target="_blank">M</a></span></span> <span class="bucket"><span class="platform"><a href="https://twitter.com/search?q=${keyword}" target="_blank">Twitter</a></span> <span class="search"><a href="https://twitter.com/search?q=${keyword}" target="_blank">T</a></span><span class="search"><a href="https://twitter.com/search?q=${keyword}&f=live" target="_blank">L</a></span></span>`;
+                const closeKeywordElem = document.createElement('p');
+                closeKeywordElem.innerText = 'X';
+                closeKeywordElem.classList.add('close-keyword');
+                innerLineItemElem.appendChild(closeKeywordElem);
+                closeKeywordElem.onclick = function () {
+                    listElem.removeChild(innerLineItemElem);
+                    const remainingKeywords = [...document.querySelectorAll('.keyword')];
+                    const dataToBeSent = [];
+                    totalNumberOfKeywords.innerText = `${remainingKeywords.length} keywords displayed`;
+                    for (let qw = 0; qw < remainingKeywords.length; qw += 1) {
+                        dataToBeSent.push(remainingKeywords[qw].innerText);
+                    }
+                };
+            }
+            const statsPanel = document.createElement('div');
+            statsPanel.classList.add('stats-panel');
+            document.querySelector('body').appendChild(statsPanel);
+            const statsPanelHeader = document.createElement('h2');
+            statsPanelHeader.innerText = `Quick Stats`;
+            statsPanel.appendChild(statsPanelHeader);
+            statsPanelHeader.classList.add('stats-panel-header');
+            totalNumberOfKeywords.innerText = `Keywords displayed: ${keywords.length}`;
+            statsPanel.appendChild(totalNumberOfKeywords);
+            totalNumberOfKeywords.classList.add('totalNumberOfKeywords');
+            const totalNumberOfClicks = document.createElement('p');
+            totalNumberOfClicks.innerText = `Session clicks: 0`;
+            statsPanel.appendChild(totalNumberOfClicks);
+            totalNumberOfClicks.classList.add('totalNumberOfClicks');
+            const allAElems = [...document.querySelectorAll('a')];
+            allAElems.forEach((a) => {
+                a.addEventListener('click', function () {
+                    totalClicks += 1;
+                    totalNumberOfClicks.innerText = `Sessions clicks: ${totalClicks}`;
+                });
+            });
+            const totalTimeOpen = document.createElement('p');
+            totalTimeOpen.innerText = `Session duration: 0 seconds`;
+            statsPanel.appendChild(totalTimeOpen);
+            totalTimeOpen.classList.add('totalTimeOpen');
+            setInterval(function () {
+                const timeInterval = new Date();
+                const currentSessionTime = timeInterval - openTime;
+                const currentSessionTimeDivided = currentSessionTime / 1000;
+                totalTimeOpen.innerText = `Session duration: ${currentSessionTimeDivided.toFixed(0)} seconds`;
+            }, 1000);
+            const searchBar = document.createElement('input');
+            searchBar.placeholder = 'Search keywords here';
+            searchBar.classList.add('search-bar');
+            document.querySelector('body').appendChild(searchBar);
+            searchBar.oninput = function () {
+                const searchValue = this.value;
+                const keywordsToSearch = [...document.querySelectorAll('.keyword')];
+                let totalDisplayedKeywords = 0;
+                for (let jh = 0; jh < keywordsToSearch.length; jh += 1) {
+                    keywordsToSearch[jh].parentElement.parentElement.style.display = 'inline';
+                }
+                for (let jh = 0; jh < keywordsToSearch.length; jh += 1) {
+                    if (!keywordsToSearch[jh].innerText.includes(searchValue)) {
+                        keywordsToSearch[jh].parentElement.parentElement.style.display = 'none';
+                    } else {
+                        totalDisplayedKeywords += 1;
+                    }
+                }
+                totalNumberOfKeywords.innerText = `${totalDisplayedKeywords} keywords displayed`;
+            };
+            const customSearchButton = document.createElement('button');
+            customSearchButton.innerText = 'Custom Search';
+            customSearchButton.classList.add('custom-search-button');
+            document.querySelector('body').appendChild(customSearchButton);
+            customSearchButton.onclick = function () {
+                function getMultipleSelectValues(select) {
+                    const result = [];
+                    const options = select && select.options;
+                    let opt;
+                    for (let qi = 0, optionLength = options.length; qi < optionLength; qi++) {
+                        opt = options[qi];
+                        if (opt.selected) {
+                            result.push(opt.value || opt.text);
+                        }
+                    }
+                    return result;
+                }
+                const bg = document.createElement('div');
+                bg.classList.add('bg');
+                document.querySelector('body').appendChild(bg);
+                const popup = document.createElement('div');
+                popup.classList.add('popup');
+                document.querySelector('body').appendChild(popup);
+                popup.style.left = `${window.innerWidth / 2 - 150}px`;
+                const closePopup = document.createElement('X');
+                closePopup.classList.add('close-popup');
+                closePopup.innerText = 'X';
+                popup.appendChild(closePopup);
+                closePopup.onclick = function () {
+                    document.querySelector('body').removeChild(bg);
+                    document.querySelector('body').removeChild(popup);
+                };
+                bg.onclick = function () {
+                    document.querySelector('body').removeChild(bg);
+                    document.querySelector('body').removeChild(popup);
+                };
+                const keywordSelect = document.createElement('select');
+                keywordSelect.classList.add('keyword-select');
+                keywordSelect.multiple = true;
+                popup.appendChild(keywordSelect);
+                for (let qg = 0; qg < keywords.length; qg += 1) {
+                    const keywordOption = document.createElement('option');
+                    keywordOption.innerText = keywords[qg];
+                    keywordOption.value = keywords[qg];
+                    keywordSelect.appendChild(keywordOption);
+                }
+                $('.keyword-select').select2();
+                const parameterDIV = document.createElement('div');
+                parameterDIV.classList.add('parameter-DIV');
+                popup.appendChild(parameterDIV);
+                const timeframeSelect = document.createElement('select');
+                timeframeSelect.classList.add('timeframe-select');
+                parameterDIV.appendChild(timeframeSelect);
+                const day = document.createElement('option');
+                day.innerText = 'Day';
+                day.value = 'd';
+                timeframeSelect.appendChild(day);
+                const week = document.createElement('option');
+                week.innerText = 'Week';
+                week.value = 'w';
+                timeframeSelect.appendChild(week);
+                const month = document.createElement('option');
+                month.innerText = 'Month';
+                month.value = 'm';
+                timeframeSelect.appendChild(month);
+                const platformSelect = document.createElement('select');
+                platformSelect.classList.add('platform-select');
+                parameterDIV.appendChild(platformSelect);
+                const google = document.createElement('option');
+                google.innerText = 'Google';
+                google.value = 'google';
+                platformSelect.appendChild(google);
+                const youtube = document.createElement('option');
+                youtube.innerText = 'YouTube';
+                youtube.value = 'youtube';
+                platformSelect.appendChild(youtube);
+                const reddit = document.createElement('option');
+                reddit.innerText = 'Reddit';
+                reddit.value = 'reddit';
+                platformSelect.appendChild(reddit);
+                const twitter = document.createElement('option');
+                twitter.innerText = 'Twitter';
+                twitter.value = 'twitter';
+                platformSelect.appendChild(twitter);
+                platformSelect.onchange = function () {
+                    if (this.value === 'twitter') {
+                        timeframeSelect.disabled = true;
+                    } else {
+                        timeframeSelect.disabled = false;
+                    }
+                };
+                const searchButton = document.createElement('button');
+                searchButton.innerText = 'Search';
+                searchButton.classList.add('search-button');
+                popup.appendChild(searchButton);
+                searchButton.onclick = function () {
+                    const selectedKeywords = getMultipleSelectValues(keywordSelect);
+                    if (selectedKeywords.length === 0) {
+                        return;
+                    }
+                    let keywordsStrungTogether = '';
+                    let realWordCounter = 0;
+                    for (let yp = 0; yp < selectedKeywords.length; yp += 1) {
+                        realWordCounter += selectedKeywords[yp].split(' ').length;
+                        keywordsStrungTogether += `${selectedKeywords[yp]}+|+`;
+                        if (realWordCounter % 30 === 0 && yp > 0) {
+                            if (platformSelect.value === 'google') {
+                                window.open(`https://www.google.com/search?q=${keywordsStrungTogether}&tbs=qdr:${timeframeSelect.value}`, '_blank');
+                            } else if (platformSelect.value === 'youtube') {
+                                window.open(
+                                    `https://www.youtube.com/results?search_query=${keywordsStrungTogether}&sp=${
+                                        timeframeSelect.value === 'm' ? 'EgQIBBAB' : timeframeSelect.value === 'd' ? 'EgIIAg%253D%253D' : 'EgQIAxAB'
+                                    }`,
+                                    '_blank'
+                                );
+                            } else if (platformSelect.value === 'reddit') {
+                                window.open(
+                                    `https://old.reddit.com/search/?q=${keywordsStrungTogether}&t=${
+                                        timeframeSelect.value === 'm' ? 'month' : timeframeSelect.value === 'd' ? 'day' : 'week'
+                                    }`,
+                                    '_blank'
+                                );
+                            } else if (platformSelect.value === 'twitter') {
+                                window.open(`https://twitter.com/search?q=${keywordsStrungTogether}`, '_blank');
+                            }
+                            keywordsStrungTogether = '';
+                            realWordCounter = 0;
+                        }
+                    }
+                    if (platformSelect.value === 'google') {
+                        window.open(`https://www.google.com/search?q=${keywordsStrungTogether}&tbs=qdr:${timeframeSelect.value}`, '_blank');
+                    } else if (platformSelect.value === 'youtube') {
+                        window.open(
+                            `https://www.youtube.com/results?search_query=${keywordsStrungTogether}&sp=${
+                                timeframeSelect.value === 'm' ? 'EgQIBBAB' : timeframeSelect.value === 'd' ? 'EgIIAg%253D%253D' : 'EgQIAxAB'
+                            }`,
+                            '_blank'
+                        );
+                    } else if (platformSelect.value === 'reddit') {
+                        window.open(
+                            `https://old.reddit.com/search/?q=${keywordsStrungTogether}&t=${
+                                timeframeSelect.value === 'm' ? 'month' : timeframeSelect.value === 'd' ? 'day' : 'week'
+                            }`,
+                            '_blank'
+                        );
+                    } else if (platformSelect.value === 'twitter') {
+                        window.open(`https://twitter.com/search?q=${keywordsStrungTogether}`, '_blank');
+                    }
+                };
+            };
+            const addButton = document.createElement('button');
+            addButton.innerText = 'Add';
+            addButton.classList.add('add-button');
+            document.querySelector('body').appendChild(addButton);
+            addButton.onclick = function () {
+                const bg = document.createElement('div');
+                bg.classList.add('bg');
+                document.querySelector('body').appendChild(bg);
+                const popup = document.createElement('div');
+                popup.classList.add('popup');
+                document.querySelector('body').appendChild(popup);
+                popup.style.left = `${window.innerWidth / 2 - 150}px`;
+                const closePopup = document.createElement('X');
+                closePopup.classList.add('close-popup');
+                closePopup.innerText = 'X';
+                popup.appendChild(closePopup);
+                closePopup.onclick = function () {
+                    document.querySelector('body').removeChild(bg);
+                    document.querySelector('body').removeChild(popup);
+                };
+                bg.onclick = function () {
+                    document.querySelector('body').removeChild(bg);
+                    document.querySelector('body').removeChild(popup);
+                };
+                const newKeywordInput = document.createElement('input');
+                newKeywordInput.placeholder = 'Enter keywords here';
+                newKeywordInput.classList.add('new-keyword-input');
+                popup.appendChild(newKeywordInput);
+                const submitButton = document.createElement('button');
+                submitButton.innerText = 'Submit';
+                submitButton.classList.add('submit-button');
+                popup.appendChild(submitButton);
+                submitButton.onclick = function () {
+                    if (newKeywordInput.value.trim() === '') {
+                        return;
+                    }
+                    const totalKeywords = [];
+                    for (let tn = 0; tn < keywords.length; tn += 1) {
+                        if (keywords[tn] !== '' && keywords[tn] !== ' ' && totalKeywords.every((q) => q !== keywords[tn])) {
+                            totalKeywords.push(keywords[tn].toLowerCase());
+                        }
+                    }
+                    const newKeywords = [...newKeywordInput.value.split(',')];
+                    for (let iy = 0; iy < newKeywords.length; iy += 1) {
+                        if (
+                            !totalKeywords.some((a) => {
+                                return a === newKeywords[iy];
+                            })
+                        ) {
+                            totalKeywords.push(newKeywords[iy].trim().toLocaleLowerCase());
+                        }
+                    }
+                    storeData('myArrayKey', totalKeywords);
+                    location.reload();
+                };
+            };
+        </script>
+    </body>
+</html>
