@@ -420,53 +420,35 @@
                     if (selectedKeywords.length === 0) {
                         return;
                     }
-                    let keywordsStrungTogether = '';
+
+                    let keywordsStrungTogether = [];
                     let realWordCounter = 0;
+
+                    const openSearch = (keywords, platform, timeframe) => {
+                        const baseUrlMap = {
+                            google: `https://www.google.com/search?q=${keywords}&tbs=qdr:${timeframe}`,
+                            youtube: `https://www.youtube.com/results?search_query=${keywords}&sp=${
+                                timeframe === 'm' ? 'EgQIBBAB' : timeframe === 'd' ? 'EgIIAg%253D%253D' : 'EgQIAxAB'
+                            }`,
+                            reddit: `https://old.reddit.com/search/?q=${keywords}&t=${timeframe === 'm' ? 'month' : timeframe === 'd' ? 'day' : 'week'}`,
+                            twitter: `https://twitter.com/search?q=${keywords}`,
+                        };
+                        window.open(baseUrlMap[platform], '_blank');
+                    };
+
                     for (let yp = 0; yp < selectedKeywords.length; yp += 1) {
                         realWordCounter += selectedKeywords[yp].split(' ').length;
-                        keywordsStrungTogether += `${selectedKeywords[yp]}+|+`;
+                        keywordsStrungTogether.push(selectedKeywords[yp]);
+
                         if (realWordCounter % 30 === 0 && yp > 0) {
-                            if (platformSelect.value === 'google') {
-                                window.open(`https://www.google.com/search?q=${keywordsStrungTogether}&tbs=qdr:${timeframeSelect.value}`, '_blank');
-                            } else if (platformSelect.value === 'youtube') {
-                                window.open(
-                                    `https://www.youtube.com/results?search_query=${keywordsStrungTogether}&sp=${
-                                        timeframeSelect.value === 'm' ? 'EgQIBBAB' : timeframeSelect.value === 'd' ? 'EgIIAg%253D%253D' : 'EgQIAxAB'
-                                    }`,
-                                    '_blank'
-                                );
-                            } else if (platformSelect.value === 'reddit') {
-                                window.open(
-                                    `https://old.reddit.com/search/?q=${keywordsStrungTogether}&t=${
-                                        timeframeSelect.value === 'm' ? 'month' : timeframeSelect.value === 'd' ? 'day' : 'week'
-                                    }`,
-                                    '_blank'
-                                );
-                            } else if (platformSelect.value === 'twitter') {
-                                window.open(`https://twitter.com/search?q=${keywordsStrungTogether}`, '_blank');
-                            }
-                            keywordsStrungTogether = '';
+                            openSearch(keywordsStrungTogether.join('+|+'), platformSelect.value, timeframeSelect.value);
+                            keywordsStrungTogether = [];
                             realWordCounter = 0;
                         }
                     }
-                    if (platformSelect.value === 'google') {
-                        window.open(`https://www.google.com/search?q=${keywordsStrungTogether}&tbs=qdr:${timeframeSelect.value}`, '_blank');
-                    } else if (platformSelect.value === 'youtube') {
-                        window.open(
-                            `https://www.youtube.com/results?search_query=${keywordsStrungTogether}&sp=${
-                                timeframeSelect.value === 'm' ? 'EgQIBBAB' : timeframeSelect.value === 'd' ? 'EgIIAg%253D%253D' : 'EgQIAxAB'
-                            }`,
-                            '_blank'
-                        );
-                    } else if (platformSelect.value === 'reddit') {
-                        window.open(
-                            `https://old.reddit.com/search/?q=${keywordsStrungTogether}&t=${
-                                timeframeSelect.value === 'm' ? 'month' : timeframeSelect.value === 'd' ? 'day' : 'week'
-                            }`,
-                            '_blank'
-                        );
-                    } else if (platformSelect.value === 'twitter') {
-                        window.open(`https://twitter.com/search?q=${keywordsStrungTogether}`, '_blank');
+
+                    if (keywordsStrungTogether.length > 0) {
+                        openSearch(keywordsStrungTogether.join('+|+'), platformSelect.value, timeframeSelect.value);
                     }
                 };
             };
