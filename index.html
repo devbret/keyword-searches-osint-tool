@@ -264,8 +264,9 @@
                     const dataToBeSent = [];
                     totalNumberOfKeywords.innerText = `${remainingKeywords.length} keywords displayed`;
                     for (let qw = 0; qw < remainingKeywords.length; qw += 1) {
-                        dataToBeSent.push(remainingKeywords[qw].innerText);
+                        dataToBeSent.push(String(remainingKeywords[qw].innerText));
                     }
+                    storeData('myArrayKey', dataToBeSent);
                 };
             }
             const statsPanel = document.createElement('div');
