@@ -222,7 +222,6 @@
                     console.error('Data must be an array.');
                     return;
                 }
-
                 localStorage.setItem(key, JSON.stringify(dataArray));
             }
             // Function to retrieve the JSON
@@ -420,10 +419,8 @@
                     if (selectedKeywords.length === 0) {
                         return;
                     }
-
                     let keywordsStrungTogether = [];
                     let realWordCounter = 0;
-
                     const openSearch = (keywords, platform, timeframe) => {
                         const baseUrlMap = {
                             google: `https://www.google.com/search?q=${keywords}&tbs=qdr:${timeframe}`,
@@ -435,7 +432,6 @@
                         };
                         window.open(baseUrlMap[platform], '_blank');
                     };
-
                     for (let yp = 0; yp < selectedKeywords.length; yp += 1) {
                         realWordCounter += selectedKeywords[yp].split(' ').length;
                         keywordsStrungTogether.push(selectedKeywords[yp]);
@@ -446,7 +442,6 @@
                             realWordCounter = 0;
                         }
                     }
-
                     if (keywordsStrungTogether.length > 0) {
                         openSearch(keywordsStrungTogether.join('+|+'), platformSelect.value, timeframeSelect.value);
                     }
